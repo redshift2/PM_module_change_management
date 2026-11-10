@@ -1,0 +1,3 @@
+plugins { id 'taack-grails-assets-plugin' }
+// ServerEventService is injected by Grails at runtime; no compile-time Server Admin dependency.
+grails { plugins { implementation project(':crew'); implementation project(':plm') } }

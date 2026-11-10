@@ -1,0 +1,12 @@
+<style>
+:root{color-scheme:dark}html,body{margin:0!important;padding:0!important;background:#22272e!important;color:#f0f3f7!important;font:14px Arial,Helvetica,sans-serif!important}
+.cm{box-sizing:border-box;min-height:100vh;padding:0 22px 36px;background:#22272e;color:#f0f3f7}.cm *{box-sizing:border-box}
+.cm-header{position:sticky;top:0;z-index:100;background:#195d8f;margin:0 -22px;padding:16px 22px;min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}
+.cm-header h1{font-size:24px;font-weight:650;margin:0;color:#fff}.cm-header-actions{display:flex;gap:8px;flex-wrap:wrap}
+.cm .btn,.cm button,.cm .cm-tab{display:inline-block;background:#414c59;color:#fff!important;border:1px solid #657283;border-radius:4px;padding:9px 13px;text-decoration:none!important;cursor:pointer;font:inherit}
+.cm .btn:hover,.cm button:hover,.cm .cm-tab:hover{background:#526376}.cm .btn-primary,.cm button.primary,.cm .cm-tab.active{background:#1d73ad;border-color:#2584c3}
+.cm-nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.cm section{background:#2b3037;border:1px solid #48535f;border-radius:5px;margin:14px 0;padding:18px}.cm h2{font-size:18px;color:#fff;margin:0 0 16px}.cm h3{font-size:16px;color:#fff;margin:20px 0 12px}.cm p{line-height:1.55}
+.cm table{width:100%;border-collapse:collapse;background:#2b3037;color:#f0f3f7;margin:12px 0}.cm th{background:#3b4551;color:#fff;border-bottom:2px solid #596779;padding:12px;text-align:left}.cm td{border-bottom:1px solid #48535f;padding:11px;text-align:left}.cm tbody tr:nth-child(even){background:#313944}.cm tbody tr:hover{background:#3b4857}
+.cm input,.cm textarea,.cm select{background:#242b33;color:#f5f7fa;border:1px solid #637184;border-radius:4px;padding:9px;margin:5px 0;max-width:100%;font:inherit}.cm label{display:block;font-weight:600;margin:12px 0}.cm label input,.cm label select,.cm label textarea{display:block;width:min(100%,640px)}.cm form.inline{display:inline-block;margin:3px}.cm .error{background:#632b34;color:#fff;padding:12px;border-radius:4px}.cm .muted{color:#bdc8d4}.cm a{color:#74c1ff}.cm .table-wrap{overflow-x:auto}
+@media(max-width:700px){.cm{padding:0 10px 25px}.cm-header{margin:0 -10px;padding:12px 10px}.cm-header h1{font-size:20px}}
+</style>

@@ -1,0 +1,19 @@
+/* Change Management content inside Parts Manager shell */
+.cm { max-width: 1600px; margin:0 auto; color:var(--pm-text); font:14px system-ui,sans-serif; }
+.cm * {box-sizing:border-box}
+.cm-page-header {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0 12px;border-bottom:1px solid var(--pm-border)}
+.cm-page-header h1 {font-size:23px;margin:0;color:var(--pm-text)}
+.cm-nav {display:flex;gap:9px;flex-wrap:wrap;margin:18px 0}
+.cm section {background:var(--pm-surface);border:1px solid var(--pm-border);border-radius:7px;margin:14px 0;padding:18px}
+.cm h2 {font-size:18px;margin:0 0 14px}.cm h3 {font-size:16px;margin:18px 0 12px}
+.cm p {line-height:1.5}
+.cm .btn,.cm button,.cm .cm-tab {display:inline-block;background:var(--pm-surface);color:var(--pm-text);border:1px solid var(--pm-border);border-radius:5px;padding:9px 13px;text-decoration:none;cursor:pointer;font:inherit}
+.cm .btn:hover,.cm button:hover,.cm .cm-tab:hover {background:var(--pm-blue);color:white}
+.cm .btn-primary,.cm button.primary,.cm .cm-tab.active {background:var(--pm-blue);color:white}
+.cm .table-wrap {overflow-x:auto}
+.cm table {width:100%;border-collapse:collapse;color:var(--pm-text);margin:12px 0}
+.cm th,.cm td {padding:11px;border-bottom:1px solid var(--pm-border);text-align:left}
+.cm th {background:var(--pm-sidebar)}
+.cm input,.cm select,.cm textarea {background:var(--pm-bg);color:var(--pm-text);border:1px solid var(--pm-border);border-radius:5px;padding:9px;max-width:100%}
+.cm .inline {display:inline-block;margin:4px}
+.cm .error {color:#ff7777;font-weight:600}
