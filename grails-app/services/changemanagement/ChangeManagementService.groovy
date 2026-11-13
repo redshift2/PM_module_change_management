@@ -28,7 +28,8 @@ class ChangeManagementService {
   sequence.save(flush:true,failOnError:true)
   String number = 'A-' + project.projectNumber + '-' + String.format('%03d',sequence.lastIssued)
   DesignChangeNotice dcn = new DesignChangeNotice(project:project, sequenceNumber:sequence.lastIssued,
-    dcnNumber:number, title:title?.trim(), description:description, plannedReleaseDate:planned).save(flush:true,failOnError:true)
+    dcnNumber:number, title:title?.trim(), description:description, plannedReleaseDate:planned,
+    issuedBy:actor?.username).save(flush:true,failOnError:true)
   serverEventService.record('DCN_CREATE','changeManagement','DesignChangeNotice',dcn.id,actor?.username,
     'Created ' + number,[dcnNumber:number,projectNumber:project.projectNumber])
   return dcn
@@ -100,11 +101,35 @@ class ChangeManagementService {
   association.delete(flush:true)
  }
 
+ void updateDcn(Long dcnId, String title, String description, Long projectId, Date planned, User actor) {
+  DesignChangeNotice dcn = DesignChangeNotice.lock(dcnId)
+  if (!dcn) throw new IllegalArgumentException('DCN not found')
+  if (dcn.status != 'DRAFT') throw new IllegalStateException('DCN is frozen; return it to Draft before editing')
+  String cleanedTitle = title?.trim()
+  if (!cleanedTitle) throw new IllegalArgumentException('Title is required')
+  if (cleanedTitle.length() > 255) throw new IllegalArgumentException('Title exceeds 255 characters')
+  if (description?.length() > 20000) throw new IllegalArgumentException('Description exceeds 20000 characters')
+  ChangeProject project = ChangeProject.get(projectId)
+  if (!project || project.status != 'OPEN') throw new IllegalArgumentException('Select an open project')
+  if (project.id != dcn.project.id) {
+   if (DcnPart.countByDcn(dcn) > 0) throw new IllegalStateException('Remove connected parts before changing the project')
+   // DCN numbers are allocated per project. Preserve the original project and
+   // issued number after creation to avoid silently invalidating references.
+   throw new IllegalStateException('DCN project cannot be changed after creation')
+  }
+  dcn.title = cleanedTitle
+  dcn.description = description
+  dcn.plannedReleaseDate = planned
+  dcn.save(flush:true, failOnError:true)
+  serverEventService.record('DCN_UPDATE','changeManagement','DesignChangeNotice',dcn.id,actor?.username,
+    'Updated ' + dcn.dcnNumber,[dcnNumber:dcn.dcnNumber])
+ }
+
  void transition(Long dcnId, String target, User actor) {
   DesignChangeNotice dcn = DesignChangeNotice.lock(dcnId)
   if (!dcn) throw new IllegalArgumentException('DCN not found')
   String from = dcn.status
-  Map allowed = [DRAFT:['IN_REVIEW','CANCELLED'], IN_REVIEW:['DRAFT','APPROVED'], APPROVED:['RELEASED','IN_REVIEW']]
+  Map allowed = [DRAFT:['IN_REVIEW','CANCELLED'], IN_REVIEW:['DRAFT','APPROVED','CANCELLED'], APPROVED:['RELEASED']]
   if (!(target in (allowed[from] ?: []))) throw new IllegalStateException('Invalid DCN transition')
   List<DcnPart> links = DcnPart.findAllByDcn(dcn)
   if (target in ['IN_REVIEW','RELEASED'] && !links) throw new IllegalStateException('DCN has no connected parts')
@@ -118,7 +143,7 @@ class ChangeManagementService {
   if (from == 'DRAFT' && target == 'IN_REVIEW') {
    if (parts.any { it.lifecycleState != PlmPartLifecycleState.WIP }) throw new IllegalStateException('All parts must be WIP and checked in')
    parts.each { it.lifecycleState = PlmPartLifecycleState.IN_REVIEW; it.save(failOnError:true) }
-  } else if (from == 'IN_REVIEW' && target == 'DRAFT') {
+  } else if (from == 'IN_REVIEW' && target in ['DRAFT','CANCELLED']) {
    if (parts.any { it.lifecycleState != PlmPartLifecycleState.IN_REVIEW }) throw new IllegalStateException('Part review state changed')
    parts.each { it.lifecycleState = PlmPartLifecycleState.WIP; it.save(failOnError:true) }
   } else if (target == 'RELEASED') {
@@ -128,7 +153,25 @@ class ChangeManagementService {
     p.checkedOutBy = null; p.checkedOutAt = null
     p.releasedBy = actor; p.releasedAt = new Date()
     p.save(failOnError:true)
+    // DCN release must emit the same per-part event as a normal PLM release.
+    // Keep the DCN release event below for the overall change notice.
+    plmPartLifecycleService.plmEventBridgeService.report('PART_RELEASE', p, actor?.username,
+      [cadVersion: "${p.majorVersion ?: 1}.${p.minorVersion ?: 0}",
+       dcnNumber: dcn.dcnNumber, projectNumber: dcn.project.projectNumber])
    }
+  }
+  if (target == 'CANCELLED') {
+   // Remove the cancelled DCN from active part metadata; retain DcnPart history.
+   parts.each { p ->
+    if (p.dcn == dcn.dcnNumber) { p.dcn = null; p.save(failOnError:true) }
+   }
+  }
+  if (target == 'APPROVED') {
+   dcn.approvedBy = actor?.username
+   dcn.approvedAt = new Date()
+  } else if (target == 'IN_REVIEW' && from == 'APPROVED') {
+   dcn.approvedBy = null
+   dcn.approvedAt = null
   }
   dcn.status = target
   dcn.save(flush:true,failOnError:true)

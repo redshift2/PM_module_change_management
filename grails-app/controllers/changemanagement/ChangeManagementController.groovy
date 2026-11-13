@@ -42,19 +42,29 @@ class ChangeManagementController {
   [dcn:d, connectedParts:connected, parts:PlmFreeCadPart.findAllByActive(true,[max:300,sort:'label'])]
  }
  @Secured('ROLE_ADMIN')
- def createProject() { mutate { changeManagementService.createProject(params.projectNumber,params.title,params.description,parseDate(params.startOfProduction)); redirect(controller:'changeManagement', action:'index', params:[tab:'projects']) } }
+ def createProject() { mutate { changeManagementService.createProject(params.projectNumber,params.title,params.description,parseDate(params.startOfProduction)); go('/changeManagement/index?tab=projects') } }
  @Secured('ROLE_ADMIN')
- def closeProject(Long id) { mutate { def p = ChangeProject.lock(id); if (!p || p.status != 'OPEN') throw new IllegalStateException('Project not open'); p.status='CLOSED'; p.save(flush:true,failOnError:true); redirect(controller:'changeManagement', action:'project', id:id) } }
+ def closeProject(Long id) { mutate { def p = ChangeProject.lock(id); if (!p || p.status != 'OPEN') throw new IllegalStateException('Project not open'); p.status='CLOSED'; p.save(flush:true,failOnError:true); go('/changeManagement/project/' + id) } }
  @Secured('ROLE_ADMIN')
- def createDcn() { mutate { def d = changeManagementService.createDcn(params.long('projectId'),params.title,params.description,parseDate(params.plannedReleaseDate),springSecurityService.currentUser); redirect(controller:'changeManagement', action:'dcn', id:d.id) } }
+ def createDcn() { mutate { def d = changeManagementService.createDcn(params.long('projectId'),params.title,params.description,parseDate(params.plannedReleaseDate),springSecurityService.currentUser); go('/changeManagement/dcn/' + d.id) } }
  @Secured('ROLE_ADMIN')
- def addPart(Long id) { mutate { changeManagementService.addPart(id,params.long('partId')); redirect(controller:'changeManagement', action:'dcn', id:id) } }
+ def updateDcn(Long id) { mutate { changeManagementService.updateDcn(id,params.title,params.description,params.long('projectId'),parseDate(params.plannedReleaseDate),springSecurityService.currentUser); go('/changeManagement/dcn/' + id) } }
  @Secured('ROLE_ADMIN')
- def removePart(Long id) { mutate { changeManagementService.removePart(id,params.long('associationId')); redirect(controller:'changeManagement', action:'dcn', id:id) } }
+ def addPart(Long id) { mutate { changeManagementService.addPart(id,params.long('partId')); go('/changeManagement/dcn/' + id) } }
  @Secured('ROLE_ADMIN')
- def transition(Long id) { mutate { changeManagementService.transition(id,params.target,springSecurityService.currentUser); redirect(controller:'changeManagement', action:'dcn', id:id) } }
+ def removePart(Long id) { mutate { changeManagementService.removePart(id,params.long('associationId')); go('/changeManagement/dcn/' + id) } }
+ @Secured('ROLE_ADMIN')
+ def transition(Long id) { mutate { changeManagementService.transition(id,params.target,springSecurityService.currentUser); go('/changeManagement/dcn/' + id) } }
  private Date parseDate(String value) { value ? java.sql.Date.valueOf(value) : null }
+ // Use explicit context-relative paths: the shell's Grails URL rewriting has
+ // previously emitted an encoded stray '}' (/%7D/changeManagement/...).
+ private void go(String path) { response.sendRedirect(request.contextPath + path) }
  private void mutate(Closure operation) {
-  try { operation.call() } catch (Exception e) { log.warn('Change Management operation failed',e); flash.error=e.message; redirect(controller:'changeManagement', action:'index') }
+  try { operation.call() } catch (Exception e) {
+   log.warn('Change Management operation failed',e)
+   flash.error=e.message
+   String id = params.id?.toString()
+   go(id?.isLong() ? '/changeManagement/dcn/' + id : '/changeManagement/index')
+  }
  }
 }
