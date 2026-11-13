@@ -131,6 +131,20 @@ class ChangeManagementService {
   String from = dcn.status
   Map allowed = [DRAFT:['IN_REVIEW','CANCELLED'], IN_REVIEW:['DRAFT','APPROVED','CANCELLED'], APPROVED:['RELEASED']]
   if (!(target in (allowed[from] ?: []))) throw new IllegalStateException('Invalid DCN transition')
+  // PLM metadata may assign a DCN directly to a new CAD revision.
+  // The DCN page includes those parts, so the transition must reconcile them
+  // with the association table before checking whether the DCN is empty.
+  // Do not auto-link historical, inactive, or superseded revisions.
+  if (from == 'DRAFT' && target == 'IN_REVIEW') {
+   PlmFreeCadPart.findAllByDcn(dcn.dcnNumber).each { PlmFreeCadPart tagged ->
+    if (tagged.active == true && tagged.nextVersion == null &&
+        !DcnPart.findByDcnAndPart(dcn, tagged)) {
+     new DcnPart(dcn:dcn, part:tagged,
+       majorVersion:tagged.majorVersion ?: 1,
+       minorVersion:tagged.minorVersion ?: 0).save(flush:true, failOnError:true)
+    }
+   }
+  }
   List<DcnPart> links = DcnPart.findAllByDcn(dcn)
   if (target in ['IN_REVIEW','RELEASED'] && !links) throw new IllegalStateException('DCN has no connected parts')
   // Lock all parts in stable order, verify the revision has not changed, then mutate.
